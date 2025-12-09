@@ -14,51 +14,69 @@ export class AppService {
   }
 
   private initializeFonts() {
-    // Try both source and dist paths (for development and production)
-    const sourceFontsPath = path.join(__dirname, 'assets', 'fonts');
-    const distFontsPath = path.join(__dirname, '..', 'src', 'assets', 'fonts');
+    // Try multiple paths (development, production, and relative)
+    const pathsToTry = [
+      path.join(__dirname, 'assets', 'fonts'), // Production: dist/assets/fonts
+      path.join(__dirname, '..', 'src', 'assets', 'fonts'), // Development: src/assets/fonts
+      path.join(process.cwd(), 'src', 'assets', 'fonts'), // Alternative: from project root
+    ];
     
-    // Try to load Hebrew-supporting fonts
-    const normalFontPath = fs.existsSync(path.join(sourceFontsPath, 'OpenSans-Regular.ttf'))
-      ? path.join(sourceFontsPath, 'OpenSans-Regular.ttf')
-      : path.join(distFontsPath, 'OpenSans-Regular.ttf');
+    let actualNormalPath: string | null = null;
+    let actualBoldPath: string | null = null;
     
-    const boldFontPath = fs.existsSync(path.join(sourceFontsPath, 'OpenSans-Bold.ttf'))
-      ? path.join(sourceFontsPath, 'OpenSans-Bold.ttf')
-      : path.join(distFontsPath, 'OpenSans-Bold.ttf');
-    
-    // Check which path actually exists
-    const actualNormalPath = fs.existsSync(path.join(sourceFontsPath, 'OpenSans-Regular.ttf'))
-      ? path.join(sourceFontsPath, 'OpenSans-Regular.ttf')
-      : fs.existsSync(path.join(distFontsPath, 'OpenSans-Regular.ttf'))
-      ? path.join(distFontsPath, 'OpenSans-Regular.ttf')
-      : null;
-    
-    const actualBoldPath = fs.existsSync(path.join(sourceFontsPath, 'OpenSans-Bold.ttf'))
-      ? path.join(sourceFontsPath, 'OpenSans-Bold.ttf')
-      : fs.existsSync(path.join(distFontsPath, 'OpenSans-Bold.ttf'))
-      ? path.join(distFontsPath, 'OpenSans-Bold.ttf')
-      : null;
+    // Find the first path that exists
+    for (const fontsPath of pathsToTry) {
+      const normalPath = path.join(fontsPath, 'OpenSans-Regular.ttf');
+      const boldPath = path.join(fontsPath, 'OpenSans-Bold.ttf');
+      
+      if (fs.existsSync(normalPath) && fs.existsSync(boldPath)) {
+        actualNormalPath = normalPath;
+        actualBoldPath = boldPath;
+        break;
+      }
+    }
     
     if (actualNormalPath && actualBoldPath && fs.existsSync(actualNormalPath) && fs.existsSync(actualBoldPath)) {
-      // Use loaded TTF fonts - pdfmake accepts file paths as strings
-      this.fonts = {
-        OpenSans: {
-          normal: actualNormalPath,
-          bold: actualBoldPath,
-          italics: actualNormalPath,
-          bolditalics: actualBoldPath,
-        },
-      };
+      // Use loaded TTF fonts - use absolute paths
+      const absoluteNormalPath = path.resolve(actualNormalPath);
+      const absoluteBoldPath = path.resolve(actualBoldPath);
+      console.log(`Loading Hebrew fonts from: ${absoluteNormalPath}`);
+      
+      // Try both buffer and absolute path approaches
+      try {
+        // First try with buffers
+        this.fonts = {
+          OpenSans: {
+            normal: fs.readFileSync(absoluteNormalPath),
+            bold: fs.readFileSync(absoluteBoldPath),
+            italics: fs.readFileSync(absoluteNormalPath),
+            bolditalics: fs.readFileSync(absoluteBoldPath),
+          },
+        };
+      } catch (error) {
+        // Fallback to absolute paths if buffer fails
+        console.warn('Buffer loading failed, trying absolute paths');
+        this.fonts = {
+          OpenSans: {
+            normal: absoluteNormalPath,
+            bold: absoluteBoldPath,
+            italics: absoluteNormalPath,
+            bolditalics: absoluteBoldPath,
+          },
+        };
+      }
     } else {
-      // Fallback: Use Arial Unicode MS if available, otherwise use system fonts
-      // Note: This may not work perfectly for Hebrew, but is better than Helvetica
+      console.warn('Hebrew fonts not found, using Helvetica fallback');
+      console.warn('Note: Helvetica does not support Hebrew - text may appear as gibberish');
+      console.warn('To fix: Download OpenSans fonts manually to src/assets/fonts/');
+      // Fallback: Use Helvetica (standard PDF font that works without file paths)
+      // This will work but Hebrew text will not render correctly
       this.fonts = {
         OpenSans: {
-          normal: 'Arial Unicode MS',
-          bold: 'Arial Unicode MS',
-          italics: 'Arial Unicode MS',
-          bolditalics: 'Arial Unicode MS',
+          normal: 'Helvetica',
+          bold: 'Helvetica-Bold',
+          italics: 'Helvetica-Oblique',
+          bolditalics: 'Helvetica-BoldOblique',
         },
       };
     }
