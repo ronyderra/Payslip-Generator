@@ -1,17 +1,68 @@
 import { Injectable } from '@nestjs/common';
 const PdfPrinter = require('pdfmake');
+import * as fs from 'fs';
+import * as path from 'path';
 import { PayslipDto } from './dto/payslip.dto';
 
 @Injectable()
 export class AppService {
-  private fonts = {
-    Roboto: {
-      normal: 'Helvetica',
-      bold: 'Helvetica-Bold',
-      italics: 'Helvetica-Oblique',
-      bolditalics: 'Helvetica-BoldOblique',
-    },
-  };
+  private fonts: any;
+
+  constructor() {
+    // Initialize fonts - try to load Hebrew fonts, fallback to system fonts
+    this.initializeFonts();
+  }
+
+  private initializeFonts() {
+    // Try both source and dist paths (for development and production)
+    const sourceFontsPath = path.join(__dirname, 'assets', 'fonts');
+    const distFontsPath = path.join(__dirname, '..', 'src', 'assets', 'fonts');
+    
+    // Try to load Hebrew-supporting fonts
+    const normalFontPath = fs.existsSync(path.join(sourceFontsPath, 'OpenSans-Regular.ttf'))
+      ? path.join(sourceFontsPath, 'OpenSans-Regular.ttf')
+      : path.join(distFontsPath, 'OpenSans-Regular.ttf');
+    
+    const boldFontPath = fs.existsSync(path.join(sourceFontsPath, 'OpenSans-Bold.ttf'))
+      ? path.join(sourceFontsPath, 'OpenSans-Bold.ttf')
+      : path.join(distFontsPath, 'OpenSans-Bold.ttf');
+    
+    // Check which path actually exists
+    const actualNormalPath = fs.existsSync(path.join(sourceFontsPath, 'OpenSans-Regular.ttf'))
+      ? path.join(sourceFontsPath, 'OpenSans-Regular.ttf')
+      : fs.existsSync(path.join(distFontsPath, 'OpenSans-Regular.ttf'))
+      ? path.join(distFontsPath, 'OpenSans-Regular.ttf')
+      : null;
+    
+    const actualBoldPath = fs.existsSync(path.join(sourceFontsPath, 'OpenSans-Bold.ttf'))
+      ? path.join(sourceFontsPath, 'OpenSans-Bold.ttf')
+      : fs.existsSync(path.join(distFontsPath, 'OpenSans-Bold.ttf'))
+      ? path.join(distFontsPath, 'OpenSans-Bold.ttf')
+      : null;
+    
+    if (actualNormalPath && actualBoldPath && fs.existsSync(actualNormalPath) && fs.existsSync(actualBoldPath)) {
+      // Use loaded TTF fonts - pdfmake accepts file paths as strings
+      this.fonts = {
+        OpenSans: {
+          normal: actualNormalPath,
+          bold: actualBoldPath,
+          italics: actualNormalPath,
+          bolditalics: actualBoldPath,
+        },
+      };
+    } else {
+      // Fallback: Use Arial Unicode MS if available, otherwise use system fonts
+      // Note: This may not work perfectly for Hebrew, but is better than Helvetica
+      this.fonts = {
+        OpenSans: {
+          normal: 'Arial Unicode MS',
+          bold: 'Arial Unicode MS',
+          italics: 'Arial Unicode MS',
+          bolditalics: 'Arial Unicode MS',
+        },
+      };
+    }
+  }
 
   generatePdf(data: PayslipDto): Promise<Buffer> {
     return new Promise((resolve, reject) => {
@@ -40,8 +91,9 @@ export class AppService {
     return {
       pageSize: 'A4',
       pageMargins: [56.7, 56.7, 56.7, 56.7], // 20mm in points (20mm * 2.835 = 56.7pt)
+      pageOrientation: 'portrait',
       defaultStyle: {
-        font: 'Roboto',
+        font: 'OpenSans',
         fontSize: 12,
         color: '#000000',
       },
@@ -66,24 +118,25 @@ export class AppService {
           columns: [
             {
               width: '48%',
+              alignment: 'right',
               stack: [
-                { text: `לקוח: 2377737`, lineHeight: 1.4 },
-                { text: `חברה: 705 - מדיה קראש בע"מ`, lineHeight: 1.4 },
-                { text: `תיק ניכויים: 923783971`, lineHeight: 1.4 },
-                { text: `מספר תאגיד: 515704765`, lineHeight: 1.4 },
-                { text: `תיק בי"ל: 92378397100`, lineHeight: 1.4 },
-                { text: `כתובת: אריאל שרון 4, גבעתיים`, lineHeight: 1.4 },
+                { text: `לקוח: 2377737`, lineHeight: 1.4, alignment: 'right' },
+                { text: `חברה: 705 - מדיה קראש בע"מ`, lineHeight: 1.4, alignment: 'right' },
+                { text: `תיק ניכויים: 923783971`, lineHeight: 1.4, alignment: 'right' },
+                { text: `מספר תאגיד: 515704765`, lineHeight: 1.4, alignment: 'right' },
+                { text: `תיק בי"ל: 92378397100`, lineHeight: 1.4, alignment: 'right' },
+                { text: `כתובת: אריאל שרון 4, גבעתיים`, lineHeight: 1.4, alignment: 'right' },
               ],
             },
             {
               width: '48%',
               alignment: 'right',
               stack: [
-                { text: `תלוש שכר לחודש: ${data.period}`, lineHeight: 1.4 },
-                { text: `הודפס בתאריך: ${currentDate}`, lineHeight: 1.4 },
-                { text: `דף 1 מתוך 1`, lineHeight: 1.4 },
-                { text: `שכר מינימום חודשי: 5300.00`, lineHeight: 1.4 },
-                { text: `שכר מינימום לשעה: 29.12`, lineHeight: 1.4 },
+                { text: `תלוש שכר לחודש: ${data.period}`, lineHeight: 1.4, alignment: 'right' },
+                { text: `הודפס בתאריך: ${currentDate}`, lineHeight: 1.4, alignment: 'right' },
+                { text: `דף 1 מתוך 1`, lineHeight: 1.4, alignment: 'right' },
+                { text: `שכר מינימום חודשי: 5300.00`, lineHeight: 1.4, alignment: 'right' },
+                { text: `שכר מינימום לשעה: 29.12`, lineHeight: 1.4, alignment: 'right' },
               ],
             },
           ],
@@ -204,6 +257,7 @@ export class AppService {
           bold: true,
           margin: [15, 10, 15, 4],
           border: [false, false, false, true],
+          alignment: 'right',
         },
         // Payments table
         {
@@ -267,6 +321,7 @@ export class AppService {
           bold: true,
           margin: [15, 0, 15, 4],
           border: [false, false, false, true],
+          alignment: 'right',
         },
         // Deductions table
         {
@@ -303,7 +358,7 @@ export class AppService {
           text: `שכר נטו לתשלום: ${data.netSalary.toFixed(2)} ₪`,
           fontSize: 14,
           bold: true,
-          alignment: 'left',
+          alignment: 'right',
           margin: [15, 8, 15, 0],
         },
         // Bottom info blocks
@@ -368,9 +423,9 @@ export class AppService {
         // Footer row
         {
           columns: [
-            { text: 'אופן תשלום: ישירות', fontSize: 11, width: 'auto' },
-            { text: 'חישוב מצטבר: כן', fontSize: 11, width: 'auto' },
-            { text: 'י"ע בחברה: 22 | ש"ע בחברה: 182.0', fontSize: 11, width: '*' },
+            { text: 'אופן תשלום: ישירות', fontSize: 11, width: 'auto', alignment: 'right' },
+            { text: 'חישוב מצטבר: כן', fontSize: 11, width: 'auto', alignment: 'right' },
+            { text: 'י"ע בחברה: 22 | ש"ע בחברה: 182.0', fontSize: 11, width: '*', alignment: 'right' },
           ],
           margin: [15, 6, 15, 0],
         },
