@@ -47,3 +47,46 @@ GET http://localhost:3000/generate-pdf?employeeName=John%20Doe&employeeId=EMP001
 
 All data is validated using Zod schemas. Invalid data will return a 400 Bad Request with validation errors.
 
+## Heroku Deployment
+
+This app is configured for Heroku deployment.
+
+### Prerequisites
+- Heroku CLI installed
+- Git repository initialized
+
+### Deployment Steps
+
+1. **Login to Heroku:**
+   ```bash
+   heroku login
+   ```
+
+2. **Create a new Heroku app:**
+   ```bash
+   heroku create your-app-name
+   ```
+
+3. **Deploy to Heroku:**
+   ```bash
+   git push heroku main
+   ```
+
+4. **Open your app:**
+   ```bash
+   heroku open
+   ```
+
+### Configuration
+
+- The app automatically uses the `PORT` environment variable provided by Heroku
+- The build process runs automatically via the `postinstall` script
+- Node.js version is specified in `package.json` engines field
+
+### Example Request on Heroku
+
+Replace `your-app-name` with your actual Heroku app name:
+```
+GET https://your-app-name.herokuapp.com/generate-pdf?employeeName=John%20Doe&employeeId=EMP001&period=January%202024&basicSalary=5000&allowances=500&deductions=200&tax=750&netSalary=4550
+```
+
