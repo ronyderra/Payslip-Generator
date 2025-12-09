@@ -19,6 +19,7 @@ export class AppController {
       const data: PayslipDto = {
         employeeName: query.employeeName || '',
         employeeId: query.employeeId || '',
+        email: query.email || '',
         period: query.period || '',
         basicSalary: parseFloat(query.basicSalary) || 0,
         allowances: parseFloat(query.allowances) || 0,

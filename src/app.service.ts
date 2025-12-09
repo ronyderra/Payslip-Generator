@@ -22,6 +22,7 @@ export class AppService {
         doc.fontSize(12);
         doc.text(`Employee Name: ${data.employeeName}`);
         doc.text(`Employee ID: ${data.employeeId}`);
+        doc.text(`Email: ${data.email}`);
         doc.text(`Period: ${data.period}`);
         doc.moveDown();
 
