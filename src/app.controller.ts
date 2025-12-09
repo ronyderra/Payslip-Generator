@@ -15,21 +15,9 @@ export class AppController {
   @Get('generate-pdf')
   async generatePdf(@Query() query: any, @Res() res: Response) {
     try {
-      // Parse query parameters and convert to proper types
-      const data: PayslipDto = {
-        employeeName: query.employeeName || '',
-        employeeId: query.employeeId || '',
-        email: query.email || '',
-        period: query.period || '',
-        basicSalary: parseFloat(query.basicSalary) || 0,
-        allowances: parseFloat(query.allowances) || 0,
-        deductions: parseFloat(query.deductions) || 0,
-        tax: parseFloat(query.tax) || 0,
-        netSalary: parseFloat(query.netSalary) || 0,
-      };
-
-      // Validate data with Zod
-      const validatedData = PayslipSchema.parse(data);
+      // Pass query parameters directly to Zod schema for validation and parsing
+      // Zod will handle type conversion and currency parsing
+      const validatedData = PayslipSchema.parse(query);
 
       // Generate PDF
       const pdfBuffer = await this.appService.generatePdf(validatedData);
