@@ -7,6 +7,11 @@ import { PayslipSchema, PayslipDto } from './dto/payslip.dto';
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
+  @Get()
+  getHealth() {
+    return { status: 'healthy', message: 'All is healthy' };
+  }
+
   @Get('generate-pdf')
   async generatePdf(@Query() query: any, @Res() res: Response) {
     try {
